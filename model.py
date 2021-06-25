@@ -55,9 +55,11 @@ class DecoderRNN(nn.Module):
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
         counter = 0
-        final_output_list = [];
+        final_output_list = []
         print(inputs.shape)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         while (counter < max_len):
+            print(inputs.shape)
             lstm_out, _ = self.lstm(inputs)
 
             output = self.hidden2tag(lstm_out)
@@ -68,9 +70,10 @@ class DecoderRNN(nn.Module):
             final_output_list.append(predicted_value)
             inputs = None
             inputs = [1,1, predicted_value]
-            
             inputs = torch.FloatTensor(inputs)
             inputs = torch.tensor(inputs).to(torch.int64)
+            inputs = inputs.to(device)
+            inputs = inputs.unsqueeze(0)
             inputs = self.word_embeddings(inputs)
             counter +=1
         print(final_output_list)
