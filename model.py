@@ -31,7 +31,7 @@ class DecoderRNN(nn.Module):
         
         self.word_embeddings = nn.Embedding(vocab_size, embed_size)
         
-        self.lstm = nn.LSTM(embed_size, hidden_size)
+        self.lstm = nn.LSTM(embed_size, hidden_size,batch_first = True)
         
         self.hidden2tag = nn.Linear(hidden_size, vocab_size)
         
@@ -54,19 +54,16 @@ class DecoderRNN(nn.Module):
     
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
-        counter = 0
+        counter  = 0
         final_output_list = []
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        while (counter < max_len):
-            print(inputs.shape)
-            lstm_out, states = self.lstm(inputs,states)
-            output = self.hidden2tag(lstm_out)
-            temp = output.squeeze(0)
-            predicted_value = max(temp)
-            final_output_list.append(predicted_value)
-            inputs = self.word_embeddings(predicted_value)
-            inputs = inputs.unsqueeze(0)
+        device = torch.device('cuda:0' if torch.cuda.is_available() else "cpu")
+        while (counter < max_len): 
+            lstm_out,_ = self.lstm(inputs)
+            outputs = self.hidden2tag(lstm_out)
+            outputs = outputs.squeeze(1)
+            _, predicted_value = torch.max(outputs, dim=1) 
+            final_output_list.append(predicted_value.cpu().numpy()[0].item()) 
+            inputs = self.word_embeddings(predicted_value) 
+            inputs = inputs.unsqueeze(1)
             counter +=1
-            print(counter)
-        print(final_output_list)
         return final_output_list
