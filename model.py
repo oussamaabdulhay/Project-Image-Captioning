@@ -56,25 +56,17 @@ class DecoderRNN(nn.Module):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
         counter = 0
         final_output_list = []
-        print(inputs.shape)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         while (counter < max_len):
             print(inputs.shape)
-            lstm_out, _ = self.lstm(inputs)
-
+            lstm_out, states = self.lstm(inputs,states)
             output = self.hidden2tag(lstm_out)
             temp = output.squeeze(0)
-            temp = temp.squeeze(0)
-            output_list = [ int(x) for x in temp]
-            predicted_value = max(output_list)
+            predicted_value = max(temp)
             final_output_list.append(predicted_value)
-            inputs = None
-            inputs = [1,1, predicted_value]
-            inputs = torch.FloatTensor(inputs)
-            inputs = torch.tensor(inputs).to(torch.int64)
-            inputs = inputs.to(device)
+            inputs = self.word_embeddings(predicted_value)
             inputs = inputs.unsqueeze(0)
-            inputs = self.word_embeddings(inputs)
             counter +=1
+            print(counter)
         print(final_output_list)
         return final_output_list
